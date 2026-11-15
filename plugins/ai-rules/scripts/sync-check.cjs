@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { runSafely, projectDir } = require('../payload/managed/ai-rules/scripts/lib/io.cjs');
-const { computeSourceVersion, readManifest } = require('./sync.cjs');
+const { computeSourceVersion, readManifest, readSeq } = require('./sync.cjs');
 const { scanRepo, formatReport, wasOffered, markOffered, defaultDataDir } = require('./scan.cjs');
 
 function offerSetup(dir) {
@@ -25,10 +25,13 @@ runSafely((input) => {
     return;
   }
   const root = process.env.CLAUDE_PLUGIN_ROOT || path.join(__dirname, '..');
-  const latest = computeSourceVersion(path.join(root, 'payload'));
+  const payloadDir = path.join(root, 'payload');
+  const latest = computeSourceVersion(payloadDir);
   const manifest = readManifest(dir);
   const current = manifest ? manifest.sourceVersion : '';
   if (current === latest) return;
+  // A repo that is ahead of the installed plugin (synced from GitHub first) must not be told to "update" backwards.
+  if ((manifest ? manifest.sourceSeq : 0) > readSeq(payloadDir)) return;
   process.stdout.write(`ai-rules: an update is available (${current || 'none'} -> ${latest}). `
     + 'Ask the user whether to sync now; if they agree, use the ai-rules:sync-repo skill.\n');
 });

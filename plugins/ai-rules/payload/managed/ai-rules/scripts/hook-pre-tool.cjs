@@ -40,7 +40,7 @@ function manifestFiles(dir) {
 function shellDecisions(input, dir, config) {
   const command = String((input.tool_input || {}).command || '');
   if (!command) return [];
-  const ctx = /\bgit\b/.test(command) && /\b(commit|push)\b/.test(command) ? gitContext(dir) : { currentBranch: null, hasCommits: true };
+  const ctx = { cwd: input.cwd || dir, forDir: gitContext };
   const out = [checkDanger(command, config, ctx), checkVerify(command, config, loadState(input.session_id))];
   if (config.guards.prCheck) {
     const base = input.cwd || dir;

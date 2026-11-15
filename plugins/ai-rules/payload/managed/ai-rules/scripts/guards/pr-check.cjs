@@ -35,15 +35,19 @@ function checkPr(command, readFile) {
   }
 
   let content = null;
+  let dynamic = false;
   const bodyFile = flagValue(args, ['--body-file', '-F']);
+  const body = flagValue(args, ['--body', '-b']);
   if (bodyFile !== undefined) {
     if (bodyFile !== '-') content = readFile(bodyFile);
-  } else if (flagValue(args, ['--body', '-b']) !== undefined) {
-    content = String(command);
+  } else if (body !== undefined) {
+    // Literal "\n" (printf) and PowerShell `n are newlines. A body built by a command or variable cannot be read.
+    content = body.replace(/\\n/g, '\n').replace(/`n/g, '\n');
+    dynamic = /\$\(|\$[A-Za-z_{]|`/.test(body) && !/<<-?\s*['"]?\w+/.test(body);
   }
   if (content !== null && content !== undefined) {
     const missing = missingSections(content);
-    if (missing.length) problems.push(`pull request body is missing: ${missing.join(', ')}.`);
+    if (missing.length && !dynamic) problems.push(`pull request body is missing: ${missing.join(', ')}.`);
   }
 
   if (!problems.length) return null;

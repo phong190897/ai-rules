@@ -1,7 +1,7 @@
 // Managed by ai-rules. Do not edit; overwritten on sync.
 'use strict';
 const { runSafely, projectDir } = require('./lib/io.cjs');
-const { loadConfig } = require('./lib/config.cjs');
+const { loadConfig, configProblem } = require('./lib/config.cjs');
 const { cleanupOldStates } = require('./lib/state.cjs');
 const { installCommitMsgHook } = require('./lib/git-hook.cjs');
 
@@ -15,6 +15,9 @@ runSafely((input) => {
       + "Do not try to install them; work with the repo's rules and ai-rules-* skills, "
       + 'and tell the user once if a task needs a plugin-only skill.');
   }
+
+  const problem = configProblem(dir);
+  if (problem) lines.push(problem);
 
   cleanupOldStates();
 

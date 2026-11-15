@@ -76,7 +76,21 @@ function planManagedFiles(payloadDir) {
 
 function readFragment(payloadDir) {
   const f = path.join(payloadDir, 'settings-fragment.json');
-  return exists(f) ? JSON.parse(readText(f)) : {};
+  return exists(f) ? parseJson(readText(f)) : {};
+}
+
+// Only files that ai-rules itself writes may be deleted: right place, plain relative path, and our marker inside.
+function isDeletable(target, rel) {
+  const p = String(rel).replace(/\\/g, '/');
+  if (path.posix.normalize(p) !== p || p.startsWith('/') || /^[A-Za-z]:/.test(p)) return false;
+  const inManaged = p === 'AGENTS.md' || p.startsWith('.claude/rules/') || p.startsWith('.claude/ai-rules/')
+    || /^\.claude\/skills\/ai-rules-[^/]+\//.test(p);
+  if (!inManaged) return false;
+  try {
+    return readText(path.join(target, p)).includes('Managed by ai-rules');
+  } catch {
+    return false;
+  }
 }
 
 function computeSourceVersion(payloadDir) {
@@ -89,11 +103,36 @@ function computeSourceVersion(payloadDir) {
   return hash.digest('hex').slice(0, 12);
 }
 
+const parseJson = (text) => JSON.parse(String(text).replace(/^﻿/, ''));
+
+// payload/VERSION holds "<sequence> <hash>". The sequence only grows, so a repo that is ahead of the installed
+// plugin can be told apart from one that is behind. `--bump` keeps the recorded hash in step with the payload.
+function readVersionFile(payloadDir) {
+  try {
+    const [seq, hash] = fs.readFileSync(path.join(payloadDir, 'VERSION'), 'utf8').trim().split(/\s+/);
+    return { seq: Number.isInteger(Number(seq)) ? Number(seq) : 0, hash: hash || '' };
+  } catch {
+    return { seq: 0, hash: '' };
+  }
+}
+
+const readSeq = (payloadDir) => readVersionFile(payloadDir).seq;
+
+function bumpVersion(payloadDir) {
+  const current = readVersionFile(payloadDir);
+  const hash = computeSourceVersion(payloadDir);
+  if (current.seq >= 1 && current.hash === hash) return current;
+  const next = { seq: current.seq + 1, hash };
+  fs.writeFileSync(path.join(payloadDir, 'VERSION'), `${next.seq} ${next.hash}\n`);
+  return next;
+}
+
 function readManifest(targetDir) {
   try {
-    const m = JSON.parse(fs.readFileSync(path.join(targetDir, MANIFEST), 'utf8'));
+    const m = parseJson(fs.readFileSync(path.join(targetDir, MANIFEST), 'utf8'));
     return {
       sourceVersion: String(m.sourceVersion || ''),
+      sourceSeq: Number.isInteger(m.sourceSeq) ? m.sourceSeq : 0,
       files: Array.isArray(m.files) ? m.files : [],
       managedDeny: Array.isArray(m.managedDeny) ? m.managedDeny : [],
     };
@@ -186,7 +225,7 @@ function syncRepo({ payloadDir, targetDir, init = false }) {
 
   if (prev) {
     for (const rel of prev.files) {
-      if (managedFiles.includes(rel)) continue;
+      if (managedFiles.includes(rel) || skipped.some((s) => s.path === rel) || !isDeletable(target, rel)) continue;
       const to = path.join(target, rel);
       if (exists(to)) {
         fs.rmSync(to);
@@ -202,8 +241,8 @@ function syncRepo({ payloadDir, targetDir, init = false }) {
     writeIfChanged(settingsFile, `${JSON.stringify(mergeSettings({}, fragment, []), null, 2)}\n`);
   } else {
     let existing = null;
-    try { existing = JSON.parse(readText(settingsFile)); } catch { /* invalid */ }
-    if (existing === null || typeof existing !== 'object') {
+    try { existing = parseJson(readText(settingsFile)); } catch { /* invalid */ }
+    if (existing === null || typeof existing !== 'object' || Array.isArray(existing)) {
       skipped.push({ path: SETTINGS, reason: 'invalid settings.json' });
     } else {
       const merged = mergeSettings(existing, fragment, prev ? prev.managedDeny : []);
@@ -213,6 +252,7 @@ function syncRepo({ payloadDir, targetDir, init = false }) {
 
   const manifest = {
     sourceVersion,
+    sourceSeq: readSeq(payloadDir),
     files: managedFiles.slice().sort(),
     managedDeny: (fragment.permissions && fragment.permissions.deny) || [],
   };
@@ -225,6 +265,10 @@ function main(argv) {
   const payloadDir = path.join(__dirname, '..', 'payload');
   const opt = (name) => { const i = argv.indexOf(name); return i === -1 ? undefined : argv[i + 1]; };
   const targetDir = path.resolve(opt('--target') || process.cwd());
+  if (argv.includes('--bump')) {
+    process.stdout.write(`${JSON.stringify(bumpVersion(payloadDir))}\n`);
+    return;
+  }
   if (argv.includes('--check')) {
     const m = readManifest(targetDir);
     const latest = computeSourceVersion(payloadDir);
@@ -240,4 +284,5 @@ if (require.main === module) main(process.argv.slice(2));
 
 module.exports = {
   planManagedFiles, generateAgentsMd, computeSourceVersion, readManifest, mergeSettings, syncRepo,
+  readSeq, bumpVersion,
 };

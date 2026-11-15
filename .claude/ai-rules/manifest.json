@@ -1,5 +1,6 @@
 {
-  "sourceVersion": "13215b0a3293",
+  "sourceVersion": "dcc07b73da3e",
+  "sourceSeq": 1,
   "files": [
     ".claude/ai-rules/catalog.md",
     ".claude/ai-rules/scripts/git-commit-msg.cjs",

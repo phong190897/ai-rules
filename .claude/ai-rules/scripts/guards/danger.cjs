@@ -1,5 +1,6 @@
 // Managed by ai-rules. Do not edit; overwritten on sync.
 'use strict';
+const path = require('node:path');
 const { splitCommands } = require('../lib/commands.cjs');
 
 const ENV_FILE = /^\.env(\.[^/\\]+)?$/;
@@ -10,12 +11,19 @@ const positionals = (args) => args.filter((a) => !a.startsWith('-'));
 
 function gitParts(tokens) {
   let i = 1;
-  while (i < tokens.length && tokens[i].startsWith('-')) i += tokens[i] === '-C' || tokens[i] === '-c' ? 2 : 1;
-  return { verb: tokens[i], args: tokens.slice(i + 1) };
+  let dir = null;
+  while (i < tokens.length && tokens[i].startsWith('-')) {
+    if (tokens[i] === '-C') dir = tokens[i + 1] || null;
+    i += tokens[i] === '-C' || tokens[i] === '-c' ? 2 : 1;
+  }
+  return { verb: tokens[i], args: tokens.slice(i + 1), dir };
 }
 
 function checkGit(tokens, config, ctx) {
-  const { verb, args } = gitParts(tokens);
+  const { verb, args, dir } = gitParts(tokens);
+  if (ctx.forDir && (verb === 'commit' || verb === 'push')) {
+    ctx = ctx.forDir(path.resolve(ctx.cwd || process.cwd(), dir || '.'));
+  }
   const main = config.mainBranch;
   const deny = (rule) => ({ decision: 'deny', reason: `ai-rules: ${rule}` });
   if (verb === 'push') {
@@ -81,11 +89,19 @@ function checkInstall(tokens) {
 }
 
 // Returns { decision: 'deny' | 'ask', reason } or null. Deny wins over ask.
+// ctx is { currentBranch, hasCommits }, or { cwd, forDir(dir) -> { currentBranch, hasCommits } } so that `cd X &&`
+// and `git -C X` are looked at in the directory they really run in.
 function checkDanger(command, config, ctx) {
   let ask = null;
+  const state = { ...(ctx || {}) };
   for (const tokens of splitCommands(command)) {
+    if (tokens[0] === 'cd') {
+      const target = tokens.slice(1).find((a) => !a.startsWith('-') && a.toLowerCase() !== '/d');
+      if (target && state.forDir) state.cwd = path.resolve(state.cwd || process.cwd(), target);
+      continue;
+    }
     if (config.guards.danger && tokens[0] === 'git') {
-      const r = checkGit(tokens, config, ctx || {});
+      const r = checkGit(tokens, config, state);
       if (r) return r;
     }
     if (config.guards.dependencies && !ask) ask = checkInstall(tokens);
