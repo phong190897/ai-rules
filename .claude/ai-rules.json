@@ -1,0 +1,9 @@
+{
+  "source": "phong190897/ai-rules",
+  "mainBranch": "main",
+  "verify": {
+    "commands": {
+      "test": ["npm test", "node --test"]
+    }
+  }
+}
