@@ -1,0 +1,12 @@
+{
+  "extraKnownMarketplaces": {
+    "ai-rules-marketplace": {
+      "source": { "source": "github", "repo": "phong190897/ai-rules" },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "ai-rules@ai-rules-marketplace": true,
+    "superpowers@claude-plugins-official": true
+  }
+}

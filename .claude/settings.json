@@ -1,0 +1,101 @@
+{
+  "extraKnownMarketplaces": {
+    "ai-rules-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "phong190897/ai-rules"
+      },
+      "autoUpdate": true
+    }
+  },
+  "enabledPlugins": {
+    "ai-rules@ai-rules-marketplace": true,
+    "superpowers@claude-plugins-official": true
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/ai-rules/scripts/hook-session-start.cjs"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/ai-rules/scripts/hook-user-prompt.cjs"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Edit|Write|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/ai-rules/scripts/hook-pre-tool.cjs"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/ai-rules/scripts/hook-post-tool.cjs"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUseFailure": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "${CLAUDE_PROJECT_DIR}/.claude/ai-rules/scripts/hook-post-tool.cjs"
+            ],
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Read(./.env.development)",
+      "Read(./.env.production)",
+      "Read(./.env.staging)",
+      "Read(./.env.test)",
+      "Read(./.env.*.local)"
+    ]
+  }
+}
