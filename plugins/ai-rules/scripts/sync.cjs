@@ -3,6 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const { scanRepo } = require('./scan.cjs');
 
 const MARK = '<!-- Managed by ai-rules. Do not edit; overwritten on sync. -->';
 const MANAGED_DIRS = { rules: '.claude/rules', skills: '.claude/skills', 'ai-rules': '.claude/ai-rules' };
@@ -139,6 +140,16 @@ function removeEmptyDirs(dir, stop) {
   }
 }
 
+// Fills verify.commands in a freshly created config from what the scan found.
+function withScannedCommands(configText, scan) {
+  const commands = {};
+  for (const [kind, list] of Object.entries(scan.commands)) if (list.length) commands[kind] = list;
+  if (!Object.keys(commands).length) return configText;
+  const config = JSON.parse(configText);
+  config.verify = { ...(config.verify || {}), commands };
+  return `${JSON.stringify(config, null, 2)}\n`;
+}
+
 function syncRepo({ payloadDir, targetDir, init = false }) {
   const target = path.resolve(targetDir);
   const written = [];
@@ -148,13 +159,16 @@ function syncRepo({ payloadDir, targetDir, init = false }) {
   const plan = planManagedFiles(payloadDir);
   const sourceVersion = computeSourceVersion(payloadDir);
 
+  const scan = init ? scanRepo(target) : undefined;
   if (init) {
     for (const [src, dest] of Object.entries(STARTER)) {
       const from = path.join(payloadDir, 'starter', src);
       if (!exists(from)) continue;
       const to = path.join(target, dest);
       if (exists(to)) { skipped.push({ path: dest, reason: 'exists' }); continue; }
-      writeIfChanged(to, readText(from));
+      let content = readText(from);
+      if (dest === '.claude/ai-rules.json') content = withScannedCommands(content, scan);
+      writeIfChanged(to, content);
       written.push(dest);
     }
   }
@@ -204,7 +218,7 @@ function syncRepo({ payloadDir, targetDir, init = false }) {
   };
   writeIfChanged(path.join(target, MANIFEST), `${JSON.stringify(manifest, null, 2)}\n`);
 
-  return { sourceVersion, written, removed, skipped };
+  return init ? { sourceVersion, written, removed, skipped, scan } : { sourceVersion, written, removed, skipped };
 }
 
 function main(argv) {
