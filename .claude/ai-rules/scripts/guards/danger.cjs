@@ -45,8 +45,9 @@ function gitParts(tokens) {
 
 function checkGit(tokens, config, ctx) {
   const { verb, args, dir } = gitParts(tokens);
-  if (ctx.forDir && (verb === 'commit' || verb === 'push')) {
-    ctx = ctx.forDir(path.resolve(ctx.cwd || process.cwd(), dir || '.'));
+  if (verb === 'commit' || verb === 'push') {
+    if (ctx.branch) ctx = { currentBranch: ctx.branch, hasCommits: true };
+    else if (ctx.forDir) ctx = ctx.forDir(path.resolve(ctx.cwd || process.cwd(), dir || '.'));
   }
   const main = config.mainBranch;
   const deny = (rule) => ({ decision: 'deny', reason: `ai-rules: ${rule}` });
@@ -82,6 +83,16 @@ function checkGit(tokens, config, ctx) {
     if (bad) return deny(`do not stage ${bad}; env files hold secrets.`);
   }
   return null;
+}
+
+// The branch a `git switch` / `git checkout` moves to (or creates), or null when the command does not change branch.
+function branchAfter(tokens) {
+  const { verb, args } = gitParts(tokens);
+  if (verb !== 'switch' && verb !== 'checkout') return null;
+  if (args.includes('--')) return null;
+  const create = args.findIndex((a) => ['-c', '-C', '-b', '-B', '--create', '--force-create'].includes(a));
+  if (create !== -1) return args[create + 1] || null;
+  return positionals(args)[0] || null;
 }
 
 // Arguments that are not flags, skipping the value of flags such as --prefix.
@@ -147,6 +158,9 @@ function checkDanger(command, config, ctx) {
     if (config.guards.danger && tokens[0] === 'git') {
       const r = checkGit(tokens, config, state);
       if (r) return r;
+      // A branch change earlier on the same line decides what a later commit or push runs on.
+      const moved = branchAfter(tokens);
+      if (moved) state.branch = moved;
     }
     if (config.guards.dependencies && !ask) ask = checkInstall(tokens);
   }
