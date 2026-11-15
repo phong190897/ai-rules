@@ -1,0 +1,7 @@
+{
+  "name": "ai-rules-marketplace",
+  "owner": { "name": "phong190897" },
+  "plugins": [
+    { "name": "ai-rules", "source": "./plugins/ai-rules" }
+  ]
+}
