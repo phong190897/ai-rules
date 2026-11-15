@@ -1,7 +1,9 @@
 // Managed by ai-rules. Do not edit; overwritten on sync.
 'use strict';
+const path = require('node:path');
 
-const norm = (p) => String(p).replace(/\\/g, '/').replace(/\/+$/, '');
+// Forward slashes, Git Bash drive paths (/c/x -> c:/x), no trailing slash; "." and ".." are resolved later.
+const norm = (p) => String(p).replace(/\\/g, '/').replace(/^\/([A-Za-z])\//, '$1:/').replace(/\/+$/, '');
 const isAbs = (p) => p.startsWith('/') || /^[A-Za-z]:\//.test(p);
 const EXACT = [
   '.claude/ai-rules.json',
@@ -13,9 +15,9 @@ const EXACT = [
 
 // Asks the user before configuration or managed files are edited. Returns { decision: 'ask', reason } or null.
 function checkConfigEdit(filePath, projectDir, manifestFiles) {
-  const root = norm(projectDir);
+  const root = path.posix.normalize(norm(projectDir)).replace(/\/+$/, '');
   const file = norm(filePath);
-  const abs = isAbs(file) ? file : `${root}/${file}`;
+  const abs = path.posix.normalize(isAbs(file) ? file : `${root}/${file}`);
   if (!abs.toLowerCase().startsWith(`${root.toLowerCase()}/`)) return null;
   const rel = abs.slice(root.length + 1);
   const lower = rel.toLowerCase();

@@ -141,7 +141,40 @@ function readManifest(targetDir) {
   }
 }
 
-const isManagedHandler = (h) => (h.args || []).some((a) => String(a).includes(SCRIPTS_MARK))
+const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+
+// The shapes mergeSettings relies on. Anything else is left alone instead of crashing half way through a sync.
+function validSettings(s) {
+  if (!isObject(s)) return false;
+  if ('hooks' in s) {
+    if (!isObject(s.hooks)) return false;
+    for (const groups of Object.values(s.hooks)) {
+      if (!Array.isArray(groups)) return false;
+      if (!groups.every((g) => isObject(g) && (!('hooks' in g) || (Array.isArray(g.hooks) && g.hooks.every(isObject))))) return false;
+    }
+  }
+  if ('permissions' in s) {
+    if (!isObject(s.permissions)) return false;
+    if ('deny' in s.permissions && !(Array.isArray(s.permissions.deny) && s.permissions.deny.every((r) => typeof r === 'string'))) return false;
+  }
+  return true;
+}
+
+// On init, add the starter's marketplace and plugin entries that the repo does not have yet; never override a choice.
+function addStarterPlugins(settings, payloadDir) {
+  const f = path.join(payloadDir, 'starter', 'settings.json');
+  if (!exists(f)) return settings;
+  let starter;
+  try { starter = parseJson(readText(f)); } catch { return settings; }
+  for (const key of ['extraKnownMarketplaces', 'enabledPlugins']) {
+    if (!isObject(starter[key])) continue;
+    if (settings[key] !== undefined && !isObject(settings[key])) continue;
+    settings[key] = { ...starter[key], ...(settings[key] || {}) };
+  }
+  return settings;
+}
+
+const isManagedHandler =(h) => (h.args || []).some((a) => String(a).includes(SCRIPTS_MARK))
   || String(h.command || '').includes(SCRIPTS_MARK);
 
 function mergeSettings(existing, fragment, prevManagedDeny) {
@@ -242,10 +275,11 @@ function syncRepo({ payloadDir, targetDir, init = false }) {
   } else {
     let existing = null;
     try { existing = parseJson(readText(settingsFile)); } catch { /* invalid */ }
-    if (existing === null || typeof existing !== 'object' || Array.isArray(existing)) {
+    if (!validSettings(existing)) {
       skipped.push({ path: SETTINGS, reason: 'invalid settings.json' });
     } else {
-      const merged = mergeSettings(existing, fragment, prev ? prev.managedDeny : []);
+      let merged = mergeSettings(existing, fragment, prev ? prev.managedDeny : []);
+      if (init) merged = addStarterPlugins(merged, payloadDir);
       writeIfChanged(settingsFile, `${JSON.stringify(merged, null, 2)}\n`);
     }
   }

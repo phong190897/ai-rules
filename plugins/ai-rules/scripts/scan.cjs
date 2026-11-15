@@ -161,8 +161,22 @@ function markOffered(dataDir, repoDir) {
   fs.writeFileSync(offeredFile(dataDir), JSON.stringify(list));
 }
 
+// Lives under the home directory, not the temp folder, so "already offered" is not forgotten by temp cleanup.
 function defaultDataDir() {
-  return process.env.CLAUDE_PLUGIN_DATA || path.join(os.tmpdir(), 'ai-rules');
+  return process.env.CLAUDE_PLUGIN_DATA || path.join(os.homedir(), '.claude', 'ai-rules-data');
+}
+
+// The setup offer for a repository, or '' when there is nothing to say. The cheap checks come first, so a repo that
+// is not a git root, or was offered before, never pays for a scan. Records the offer when it returns text.
+function offerText(dir, dataDir, scanFn = scanRepo) {
+  if (!exists(path.join(dir, '.git')) || wasOffered(dataDir, dir)) return '';
+  const report = scanFn(dir);
+  if (!report.isGitRoot) return '';
+  markOffered(dataDir, dir);
+  const lines = formatReport(report).map((l) => `- ${l}`);
+  return ['ai-rules: this repository is not set up with ai-rules. Quick scan:', ...lines,
+    'Ask the user once, in their language, whether to set it up. If they agree, use the ai-rules:init-repo skill. '
+    + 'If they decline, do not ask again.', ''].join('\n');
 }
 
 if (require.main === module) {
@@ -171,4 +185,4 @@ if (require.main === module) {
   process.stdout.write(`${JSON.stringify(scanRepo(dir), null, 2)}\n`);
 }
 
-module.exports = { scanRepo, formatReport, wasOffered, markOffered, defaultDataDir };
+module.exports = { scanRepo, formatReport, wasOffered, markOffered, defaultDataDir, offerText };

@@ -43,12 +43,18 @@ function saveState(sessionId, state) {
     const file = fileFor(sessionId);
     const tmp = `${file}.${process.pid}.tmp`;
     fs.writeFileSync(tmp, JSON.stringify(state));
-    try {
-      fs.renameSync(tmp, file);
-    } catch {
-      fs.writeFileSync(file, JSON.stringify(state));
-      fs.rmSync(tmp, { force: true });
+    // On Windows the rename can fail while another hook is reading the file; retry before the non-atomic fallback.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        fs.renameSync(tmp, file);
+        return;
+      } catch {
+        const until = Date.now() + 10 * (attempt + 1);
+        while (Date.now() < until) { /* brief wait */ }
+      }
     }
+    fs.writeFileSync(file, JSON.stringify(state));
+    fs.rmSync(tmp, { force: true });
   } catch { /* state is best effort */ }
 }
 

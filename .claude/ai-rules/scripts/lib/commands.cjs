@@ -47,7 +47,8 @@ function splitCommands(command) {
     const ch = s[i];
     if (q) {
       if (ch === q) q = null;
-      else if (ch === '\\' && q === '"' && s[i + 1] === '"') { cur += '"'; i++; }
+      // \" is an escaped quote, unless no quote follows: then it is a path such as "C:\repo\" that ends the string.
+      else if (ch === '\\' && q === '"' && s[i + 1] === '"' && s.indexOf('"', i + 2) !== -1) { cur += '"'; i++; }
       else cur += ch;
     } else if (ch === '"' || ch === "'") {
       q = ch;

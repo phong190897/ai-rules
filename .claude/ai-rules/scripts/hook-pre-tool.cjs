@@ -3,7 +3,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
-const { runSafely, projectDir, preToolDecision, emit } = require('./lib/io.cjs');
+const { runSafely, projectDir, sessionKey, preToolDecision, emit } = require('./lib/io.cjs');
 const { loadConfig } = require('./lib/config.cjs');
 const { loadState } = require('./lib/state.cjs');
 const { checkDanger } = require('./guards/danger.cjs');
@@ -41,7 +41,7 @@ function shellDecisions(input, dir, config) {
   const command = String((input.tool_input || {}).command || '');
   if (!command) return [];
   const ctx = { cwd: input.cwd || dir, forDir: gitContext };
-  const out = [checkDanger(command, config, ctx), checkVerify(command, config, loadState(input.session_id))];
+  const out = [checkDanger(command, config, ctx), checkVerify(command, config, loadState(sessionKey(input, dir)))];
   if (config.guards.prCheck) {
     const base = input.cwd || dir;
     out.push(checkPr(command, (p) => {

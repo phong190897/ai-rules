@@ -1,5 +1,6 @@
 // Managed by ai-rules. Do not edit; overwritten on sync.
 'use strict';
+const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
@@ -23,6 +24,13 @@ function readInput() {
 
 function projectDir(input) {
   return process.env.CLAUDE_PROJECT_DIR || (input && input.cwd) || process.cwd();
+}
+
+// Key for the per-session state file. Without a session id, each project gets its own key instead of sharing one.
+function sessionKey(input, dir) {
+  const id = input && input.session_id;
+  if (typeof id === 'string' && id) return id;
+  return `p${crypto.createHash('sha1').update(String(dir || '')).digest('hex').slice(0, 12)}`;
 }
 
 function preToolDecision(decision, reason) {
@@ -77,5 +85,5 @@ function runSafely(fn) {
 }
 
 module.exports = {
-  parseInput, readInput, projectDir, preToolDecision, contextOutput, commandFailed, emit, runSafely,
+  parseInput, readInput, projectDir, sessionKey, preToolDecision, contextOutput, commandFailed, emit, runSafely,
 };

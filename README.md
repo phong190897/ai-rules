@@ -108,7 +108,7 @@ Ba mức: **chặn** (AI không làm được), **hỏi** (bạn bấm đồng �
 - `guards`: tắt riêng từng hook ở repo có quy ước khác.
 - `verify.commands`: lệnh nào được coi là e2e, test, build, lint. Chưa khai báo e2e thì dùng `playwright test`, `cypress run` và script npm có tên chứa `e2e`.
 - `verify.e2ePreflight`: lệnh kiểm tra môi trường nhanh; phải chạy thành công một lần mỗi phiên trước khi chạy e2e.
-- `commitMsg.scope`: `"ai"` (mặc định) chỉ kiểm tra commit do AI tạo; `"all"` kiểm tra mọi commit.
+- `commitMsg.scope`: `"ai"` (mặc định) chỉ kiểm tra commit do phiên Claude Code tạo (nhận ra qua biến môi trường của Claude Code); commit do AI khác hoặc do bạn gõ tay thì không bị kiểm tra. Đặt `"all"` để kiểm tra mọi commit, kể cả của AI khác.
 
 ## Phát triển
 
