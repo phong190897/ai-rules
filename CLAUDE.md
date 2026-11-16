@@ -13,12 +13,11 @@ Node.js 20 or newer, CommonJS (`.cjs`), no dependencies. Tests use `node:test`.
 - Test: `npm test`
 - E2E: none
 
-## Structure
-- `plugins/ai-rules/payload/` is the source of truth: `managed/` is copied into other repos, `starter/` is created once, `settings-fragment.json` is merged into their `settings.json`.
-- `plugins/ai-rules/scripts/` holds the plugin's own scripts: `sync.cjs`, `scan.cjs`, `sync-check.cjs`.
-- `plugins/ai-rules/skills/` and `hooks/` are the plugin's runtime parts.
-- `.claude/`, `AGENTS.md` and `.github/workflows/ai-rules-sync.yml` here are generated copies of the payload (this repo uses its own rules).
-- `tests/` has one test file per area; `docs/superpowers/` has the design and the plan.
+## Architecture
+- Style: one plugin that owns a payload and copies it into other repos. Chosen because the same files must run from a repo checkout, locally and in cloud sessions.
+- Modules: `plugins/ai-rules/payload/` source of truth (`managed/` copied as is, `starter/` created once, `settings-fragment.json` merged); `plugins/ai-rules/scripts/` the plugin's own sync, scan and update check; `plugins/ai-rules/skills/` and `hooks/` the plugin's runtime; `tests/` one file per area; `docs/superpowers/` design and plans; `.claude/`, `AGENTS.md` and `.github/workflows/ai-rules-sync.yml` generated copies.
+- Dependency rules: files under `payload/managed/ai-rules/scripts/` require only Node built-ins and each other, never anything outside that folder, because they are copied alone. `plugins/ai-rules/scripts/` may require them, not the other way round. No npm dependencies.
+- New code: a guard goes in `payload/managed/ai-rules/scripts/guards/` with its test in `tests/`; anything that only the plugin runs goes in `plugins/ai-rules/scripts/`.
 
 ## Conventions
 - After changing anything under `plugins/ai-rules/payload/`, run `node plugins/ai-rules/scripts/sync.cjs --target .` and commit the result; a test fails if the copy is stale.
