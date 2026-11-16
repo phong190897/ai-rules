@@ -17,6 +17,8 @@ Project description: read `CLAUDE.md`.
 - E2E: run the repo's environment preflight (if `.claude/ai-rules.json` declares one) before the first e2e run. Re-run only the failing tests; run the full suite once, at the end.
 - Tokens: search before reading; read only the part you need; never re-read a file already in context; run the narrowest test that proves the change; trim long command output; keep replies short. Details: `ai-rules-saving-tokens`.
 - PRs, commits, comments: follow `ai-rules-creating-prs` and `ai-rules-writing-comments`.
+- Architecture: follow the Architecture section of `CLAUDE.md`. Put new code in the module that owns it; ask the user before crossing a module boundary or breaking a dependency rule. Details: `ai-rules-architecture`.
+- No architecture yet: if `CLAUDE.md` has no filled Architecture section and the task is more than a small fix, propose filling it first with `ai-rules-architecture`.
 - Managed files: never hand-edit files marked "Managed by ai-rules", `.claude/ai-rules.json` or `.claude/settings.json` without the user's approval.
 - Reply in the user's language.
 
@@ -26,6 +28,7 @@ Read the matching file before doing the task.
 
 | When | Read |
 |---|---|
+| Use when choosing or recording a project's architecture, or before adding code that crosses module boundaries. | `.claude/skills/ai-rules-architecture/SKILL.md` |
 | Use when designing or changing server-side code: APIs, data access, background jobs. | `.claude/skills/ai-rules-backend-basics/SKILL.md` |
 | Use when creating a branch or opening a pull request. | `.claude/skills/ai-rules-creating-prs/SKILL.md` |
 | Use when an e2e, test, build or lint command fails, before re-running it. | `.claude/skills/ai-rules-handling-failures/SKILL.md` |

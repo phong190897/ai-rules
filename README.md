@@ -148,4 +148,6 @@ Nguồn của mọi thứ nằm ở `plugins/ai-rules/payload/`. Repo này cũng
 node plugins/ai-rules/scripts/sync.cjs --target .
 ```
 
-để cập nhật bản sao trong `.claude/`, `AGENTS.md`, rồi commit.
+để cập nhật bản sao trong `.claude/`, `AGENTS.md`, rồi commit. Trước đó chạy `node plugins/ai-rules/scripts/sync.cjs --bump` để tăng số phiên bản của payload; một test sẽ fail nếu quên.
+
+Danh mục kiến trúc nằm ở `plugins/ai-rules/payload/managed/ai-rules/architectures.md`. Để rà soát và bổ sung nó, mở phiên Claude Code trong repo này và gọi skill `update-architectures`: AI tìm hiểu trên web, đề xuất từng thay đổi kèm nguồn, và bạn chọn cái nào được nhận. Dòng `Last reviewed:` ở đầu file cho biết lần rà soát gần nhất.
