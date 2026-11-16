@@ -499,3 +499,107 @@ Thiết lập ai-rules cho repo này không?
 - Danh sách chính xác các dependency được coi là frontend và backend.
 - Định dạng file ghi "đã gợi ý" và cách chuẩn hoá đường dẫn repo (Windows không phân biệt hoa thường).
 - Câu chữ tiếng Anh của khối ngữ cảnh mà hook in ra.
+
+## 13. Bổ sung: thiết kế kiến trúc cho từng repo (đã duyệt)
+
+### Mục đích
+
+Mỗi repo có một kiến trúc được quyết định và ghi lại trước khi viết code, và AI làm theo nó ở mọi phiên sau. Lý do của người dùng: code không có kế hoạch khiến việc bảo trì tốn token hơn, và sửa lỗi A dễ gây ra lỗi B.
+
+Hai kết quả đó đến từ **ranh giới rõ** (AI biết đọc và sửa ở đâu, thay đổi không lan sang chỗ khác), không đến từ tên của kiến trúc. Vì vậy phần này ghi ba thứ: kiểu kiến trúc, bản đồ module, và luật phụ thuộc.
+
+### Các cách đã cân nhắc (cho việc giữ đúng ranh giới)
+
+| Cách | Được | Mất |
+|---|---|---|
+| Chỉ có rule | Rẻ nhất. | Không có gì ngăn khi AI quên. |
+| **Rule + công cụ kiểm tra ranh giới của chính stack (đã chọn)** | Có kiểm tra thật; dùng công cụ sẵn có; vi phạm làm lint fail theo cơ chế đã có. | Mỗi repo cần cài và cấu hình một công cụ; stack không có công cụ phù hợp thì chỉ còn rule. |
+| Hook của ai-rules tự phân tích import | Chặn ngay lúc ghi file. | Phải tự viết bộ phân tích cho từng ngôn ngữ; dễ chặn nhầm; tốn công bảo trì. |
+
+Người dùng chọn cách thứ hai.
+
+### Hành vi
+
+**Khi nào AI làm việc này**
+
+- **Lúc brainstorm:** `ai-rules-repo-setup` gọi thêm skill mới `ai-rules-architecture` trước khi ghi mô tả dự án.
+- **Sau `init-repo`:** bước cuối của `init-repo` đã đề nghị chạy `ai-rules-repo-setup`, nên phần kiến trúc đi kèm.
+- **Khi đọc repo để làm việc:** rule cốt lõi thêm một dòng — nếu `CLAUDE.md` chưa có mục Architecture và việc sắp làm không nhỏ, đề xuất điền mục đó trước.
+
+**Repo mới.** AI hỏi ngắn gọn, từng câu một, về: quy mô và số người làm, cách triển khai, các mảng nghiệp vụ chính, yêu cầu đặc biệt (tải lớn, nhiều nhóm độc lập, nhiều giao diện). Sau đó AI đưa ra **hai hoặc ba** kiến trúc phù hợp, lấy từ danh mục kiến trúc (xem dưới). Với mỗi kiến trúc, AI nêu: vì sao nó hợp với dự án này, cái giá phải trả ở dự án này, và điều gì sẽ khiến nó thành lựa chọn sai. AI nói rõ mình nghiêng về phương án nào và vì sao, nhưng **không có phương án mặc định cài sẵn** và **người dùng là người quyết định**.
+
+**Repo có sẵn code, kiến trúc rõ ràng.** AI nhận ra kiến trúc đang dùng (từ cấu trúc thư mục và hướng import) rồi ghi lại đúng như hiện trạng. AI không tự đề xuất đổi kiến trúc; chỉ nêu khi người dùng hỏi.
+
+**Repo có sẵn code, chưa có kiến trúc nhất định.** Khi code lẫn lộn nhiều kiểu hoặc không theo kiểu nào, AI mô tả hiện trạng kèm bằng chứng (đường dẫn cụ thể), rồi đưa ra hai hoặc ba kiến trúc mà repo có thể hướng tới. Với mỗi kiến trúc, AI nêu mức phù hợp, công chuyển đổi, và phần nào của code được giữ nguyên. Người dùng quyết định. Kiến trúc được chọn ghi là **mục tiêu**: `Style: <kiểu> (target; <phần chưa theo>)`. Code mới làm theo mục tiêu; AI không tự sửa code cũ cho khớp.
+
+**Ngoài danh mục.** Khi không kiểu nào trong danh mục phù hợp, AI được đề xuất một kiểu khác, phải nói rõ nó nằm ngoài danh mục, và gợi ý thêm nó vào danh mục ở repo gốc.
+
+### Danh mục kiến trúc và cách cập nhật
+
+- **Một file riêng:** `.claude/ai-rules/architectures.md` (được quản lý). Thêm hoặc sửa một kiểu kiến trúc là sửa một file ở repo gốc, và mọi repo con nhận qua đồng bộ.
+- **Mỗi kiểu một mục** với cùng khuôn: hợp khi nào, không hợp khi nào, module và luật phụ thuộc điển hình. Cuối file là bảng công cụ kiểm tra ranh giới theo stack.
+- **Danh sách khởi đầu:** modular monolith, N-Layer, Clean / Hexagonal, vertical slice, microservices, microfrontend, event-driven, serverless.
+- **Dòng `Last reviewed: <ngày>`** ở đầu file, để thấy ngay danh mục đã cũ hay chưa.
+- **Cập nhật định kỳ:** repo gốc có một skill riêng `update-architectures`. Khi chạy, AI tìm hiểu trên web các kiểu kiến trúc và công cụ kiểm tra mới, so với danh mục, rồi đề xuất từng thay đổi kèm nguồn. Người dùng chọn thay đổi nào được nhận; AI sửa file, cập nhật ngày, và mở PR. Một kiểu chỉ được thêm khi đã có tài liệu và được dùng thật, không chỉ vì nó mới.
+- Skill này chạy khi người dùng gọi. Lên lịch chạy tự động là việc có thể thêm sau.
+
+**Nội dung ghi vào `CLAUDE.md`.** Mục `## Architecture` thay cho mục `## Structure` hiện nay, gồm bốn phần ngắn:
+
+```markdown
+## Architecture
+- Style: modular monolith, layered inside each module. Chosen because one developer, one deployment.
+- Modules: `src/orders/` order lifecycle; `src/billing/` payments and invoices; `src/shared/` cross-cutting code.
+- Dependency rules: `domain` imports nothing from `infrastructure` or `api`; modules talk through their `index.ts` only.
+- New code: a new feature goes in the module that owns its data; add a module only for a new business area.
+```
+
+Giới hạn độ dài của `CLAUDE.md` tăng từ 40 lên 60 dòng để chứa mục này.
+
+**AI làm theo thế nào.** Rule cốt lõi thêm một dòng: làm theo mục Architecture; đặt code mới đúng module; thay đổi vượt ranh giới hoặc trái luật phụ thuộc thì hỏi người dùng trước.
+
+**Kiểm tra ranh giới.** Sau khi mục Architecture được duyệt, AI đề xuất bật công cụ kiểm tra của stack và chỉ làm khi người dùng đồng ý (việc cài là thêm dependency nên hook sẵn có sẽ hỏi):
+
+| Stack | Công cụ đề xuất |
+|---|---|
+| JavaScript / TypeScript | `dependency-cruiser`, hoặc `eslint-plugin-boundaries` nếu repo đã dùng ESLint |
+| Python | `import-linter` |
+| Java / Kotlin | ArchUnit |
+| .NET | NetArchTest |
+| Go | `depguard` qua `golangci-lint` |
+| Khác | không có công cụ: chỉ dùng rule, và AI nói rõ điều đó |
+
+Lệnh kiểm tra được chạy cùng lint: hoặc gắn vào script lint sẵn có, hoặc khai báo thêm trong `verify.commands.lint`. Nhờ vậy vi phạm làm lint fail và giới hạn chạy lại sẵn có áp dụng luôn.
+
+### Thay đổi cụ thể
+
+- **Skill mới `ai-rules-architecture`** (được quản lý, ≤ 150 dòng): các câu hỏi cần hỏi; cách trình bày hai hoặc ba phương án để người dùng quyết định; cách xử lý ba trường hợp repo (mới, có kiến trúc rõ, chưa có kiến trúc nhất định); khuôn mục Architecture. Skill đọc danh mục từ file riêng, không chứa bảng kiểu kiến trúc.
+- **File mới `architectures.md`** (được quản lý, ≤ 150 dòng): danh mục kiến trúc và bảng công cụ kiểm tra.
+- **Skill riêng của repo gốc `update-architectures`** (không được quản lý, chỉ có ở repo này): cập nhật danh mục.
+- **`ai-rules-repo-setup`:** khuôn `CLAUDE.md` đổi `Structure` thành `Architecture`, giới hạn 60 dòng; thêm việc gọi `ai-rules-architecture` và việc đề xuất công cụ kiểm tra ranh giới.
+- **Rule cốt lõi:** thêm hai dòng (làm theo Architecture; đề xuất điền khi còn trống). Vẫn trong giới hạn 40 dòng.
+- **Starter `CLAUDE.md`, `init-repo`, README, danh mục skill:** cập nhật theo.
+- **`AGENTS.md`:** tự có thêm dòng trỏ tới skill mới, vì nó được sinh từ danh sách skill.
+
+### Ngoài phạm vi
+
+- Hook của ai-rules tự phân tích import.
+- Tự sửa code sẵn có cho khớp một kiến trúc mới.
+- Bộ quét lúc `init` tự đoán kiến trúc: việc đó cần đọc source code, nên do AI làm khi người dùng đồng ý chạy `ai-rules-repo-setup`.
+- Sơ đồ kiến trúc dạng hình vẽ.
+
+### Quyết định do tôi (Claude) đưa ra
+
+1. AI đưa ra hai hoặc ba phương án và nói mình nghiêng về phương án nào; không có mặc định cài sẵn (theo yêu cầu của người dùng).
+2. Repo có kiến trúc rõ thì chỉ ghi lại; repo chưa có kiến trúc nhất định thì AI đề xuất vài phương án, và phương án được chọn ghi là mục tiêu (theo yêu cầu của người dùng). AI không tự sửa code cũ.
+7. Danh mục kiến trúc nằm trong file riêng và được cập nhật bằng một skill chạy ở repo gốc khi người dùng gọi; chưa lên lịch tự động.
+8. AI được đề xuất kiểu nằm ngoài danh mục khi không kiểu nào phù hợp, và phải nói rõ điều đó.
+9. Thêm "vertical slice" vào danh sách khởi đầu.
+3. Mục Architecture thay cho mục Structure, và `CLAUDE.md` được phép dài 60 dòng.
+4. Phần kiến trúc nằm trong một skill riêng, không nhồi vào `ai-rules-repo-setup`, để chỉ nạp khi cần.
+5. Công cụ kiểm tra chạy cùng lint, không phải một loại lệnh mới.
+6. Bảng công cụ theo stack là gợi ý ban đầu; thêm stack = sửa một file ở repo gốc.
+
+### Còn để lại cho người xây
+
+- Câu chữ của skill và của bảng các kiểu kiến trúc.
+- Cấu hình mẫu cho từng công cụ kiểm tra (skill chỉ nêu tên công cụ và ý chính; AI viết cấu hình theo luật phụ thuộc của từng repo).

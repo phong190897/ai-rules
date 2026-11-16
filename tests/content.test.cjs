@@ -25,7 +25,26 @@ const SKILLS = {
   'ai-rules-saving-tokens': ['search', 'output'],
   'ai-rules-backend-basics': ['migration', 'timeout'],
   'ai-rules-security-basics': ['injection', '/security-review'],
+  'ai-rules-architecture': ['architectures.md', 'one at a time', 'two or three', 'the user decides', '## Architecture',
+    'Dependency rules:', 'New code:', '## Structure', 'not decided (user choice)', '(target;', 'not in the catalog',
+    'verify.commands.lint', 'Monorepo'],
 };
+test('architecture catalog has every style in the same shape, plus the boundary tools', () => {
+  const f = `${MANAGED}/ai-rules/architectures.md`; const text = fs.readFileSync(f, 'utf8');
+  const names = ['Modular monolith', 'N-Layer', 'Clean / Hexagonal', 'Vertical slice', 'Microservices',
+    'Microfrontend', 'Event-driven', 'Serverless'];
+  assert.deepEqual([...text.matchAll(/^### (.+)$/gm)].map((m) => m[1]), names);
+  for (const label of ['- What it is:', '- Fits when:', '- Does not fit when:', '- Typical modules and rule:'])
+    assert.equal(text.split(label).length - 1, names.length, label);
+  assert.match(text, /^Last reviewed: \d{4}-\d{2}-\d{2}$/m);
+  assert.match(text, /^## Boundary tools$/m);
+  for (const tool of ['dependency-cruiser', 'eslint-plugin-boundaries', 'import-linter', 'ArchUnit', 'NetArchTest', 'depguard'])
+    assert.ok(text.includes(tool), tool);
+  assert.ok(lines(f) <= 150, `catalog has ${lines(f)} lines`);
+  const skill = fs.readFileSync(`${MANAGED}/skills/ai-rules-architecture/SKILL.md`, 'utf8');
+  for (const n of names) assert.equal(skill.includes(`### ${n}`), false, `${n} belongs in the catalog, not the skill`);
+  assert.doesNotMatch(skill, /by default|default to/i);
+});
 test('each content skill has valid frontmatter, required content and size', () => {
   assert.deepEqual(fs.readdirSync(`${MANAGED}/skills`).sort(), Object.keys(SKILLS).sort());
   for (const [name, needles] of Object.entries(SKILLS)) {
@@ -38,7 +57,7 @@ test('each content skill has valid frontmatter, required content and size', () =
 test('catalog lists the three approved areas and cloud availability', () => {
   const c = fs.readFileSync(`${MANAGED}/ai-rules/catalog.md`, 'utf8');
   for (const n of ['frontend-design', '/security-review', 'ai-rules-security-basics', 'ai-rules-backend-basics',
-    'Available in cloud sessions']) assert.ok(c.includes(n), n);
+    'ai-rules-architecture', 'Available in cloud sessions']) assert.ok(c.includes(n), n);
 });
 test('AGENTS.md lists every content skill', () => {
   const a = sync.generateAgentsMd(PAYLOAD);
