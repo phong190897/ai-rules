@@ -20,7 +20,7 @@ Copies the shared rules, hooks and skills into the current repository. Everythin
 4. Ask about each of these separately and do it only if the user agrees:
    - files in `scan.trackedEnvFiles`: remove them from git with `git rm --cached` and add them to `.gitignore`;
    - skills in `scan.suggestedSkills`: install them, following `.claude/ai-rules/catalog.md`;
-   - an existing `CLAUDE.md`: offer to reorganize it into the standard sections (What this is, Stack, Commands, Architecture, Conventions); never rewrite it unasked.
+   - an existing `CLAUDE.md`: offer to reorganize it into the standard sections (What this is, Stack, Commands, Architecture, Conventions); never rewrite it unasked. The Architecture section is filled through `ai-rules-architecture`, not here.
 5. Tell the user to enable "Allow GitHub Actions to create and approve pull requests" in the repository settings, so the daily sync workflow can open pull requests.
 6. Give the user the two commands to install the plugin on another machine:
 

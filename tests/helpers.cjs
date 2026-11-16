@@ -29,9 +29,12 @@ function runHook(script, input, env = {}) {
   return { status: r.status, stdout: r.stdout, json };
 }
 
-// Lists every relative require() in the .cjs files under rootDir whose target lies outside rootDir.
+// Lists every require() in the .cjs files under rootDir that would break when the folder is copied alone:
+// a relative path whose target lies outside rootDir, or a package that is not a Node built-in.
+// Blind spots: computed requires, require.resolve, import(), and files read at run time through __dirname.
 function findEscapingRequires(rootDir) {
   const root = path.resolve(rootDir);
+  const builtins = new Set(require('node:module').builtinModules);
   const out = [];
   const walk = (dir) => {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -39,10 +42,14 @@ function findEscapingRequires(rootDir) {
       if (e.isDirectory()) { walk(p); continue; }
       if (!e.name.endsWith('.cjs')) continue;
       const text = fs.readFileSync(p, 'utf8');
-      for (const m of text.matchAll(/require\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*\)/g)) {
-        const target = path.resolve(path.dirname(p), m[1]);
-        if (target !== root && !target.startsWith(root + path.sep)) {
-          out.push(`${path.relative(root, p).split(path.sep).join('/')}: ${m[1]}`);
+      const rel = path.relative(root, p).split(path.sep).join('/');
+      for (const m of text.matchAll(/require\(\s*['"]([^'"]+)['"]\s*\)/g)) {
+        const spec = m[1];
+        if (spec === '.' || spec === '..' || spec.startsWith('./') || spec.startsWith('../')) {
+          const target = path.resolve(path.dirname(p), spec);
+          if (target !== root && !target.startsWith(root + path.sep)) out.push(`${rel}: ${spec}`);
+        } else if (!builtins.has(spec.replace(/^node:/, ''))) {
+          out.push(`${rel}: ${spec}`);
         }
       }
     }

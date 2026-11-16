@@ -11,7 +11,7 @@ There is no preset answer. You bring the options and your opinion; the user deci
 
 ## Start
 
-1. Read `.claude/ai-rules/architectures.md`, the catalog of styles and boundary tools.
+1. When choosing or recording an architecture, read `.claude/ai-rules/architectures.md`, the catalog of styles and boundary tools. When you are only placing code in a repo that already has the section, skip to "While coding".
 2. If `CLAUDE.md` still has an old `## Structure` section, propose turning it into `## Architecture`. Never keep both.
 3. Work out which of the three cases below applies.
 
@@ -61,9 +61,11 @@ When nothing in the catalog fits, you may propose another style. Say plainly tha
 - New code: <where a new feature goes>.
 ```
 
+In every case, show the section and say which of the three cases you judged it to be; write it only after the user agrees.
+
 Keep it short; `CLAUDE.md` as a whole stays at 60 lines or fewer. Monorepo: still one section, with one entry per package under Modules.
 
-If the user does not want to decide now, write `- Style: not decided (user choice)` and do not raise it again.
+If the user does not want to decide now, write `- Style: not decided (user choice)`, leave the other lines as they are (keep the content of an old Structure section under Modules), and do not raise it again unless the user brings it up.
 
 ## Boundary check
 
@@ -71,7 +73,8 @@ Once the section is agreed, propose a tool that checks the dependency rules, fro
 
 - Ask before installing it; it is a new dependency.
 - Read the tool's documentation before writing its configuration; do not write it from memory.
-- Make it run together with lint: add it to the existing lint script, or add its command to `verify.commands.lint` in `.claude/ai-rules.json`. A violation then fails lint, and the usual retry limit applies.
+- Make it run together with lint. A lint plugin or a command-line tool goes into the existing lint script. When the tool is a test library, put its rules in a separate test target. Either way, if the command is not part of the lint script, list it under `verify.commands.lint` in `.claude/ai-rules.json` and run it whenever you run lint; the usual retry limit then applies to it.
+- A tool checks imports. If it cannot express one of the dependency rules (for example "no shared database"), say which rule stays unchecked.
 - Monorepo: each package uses the tool of its own stack.
 - If the stack has no tool in the table, say so. The rule in `CLAUDE.md` is then the only guard.
 

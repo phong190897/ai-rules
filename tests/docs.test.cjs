@@ -12,6 +12,6 @@ test('README covers install, environments and configuration', () => {
   for (const n of ['claude plugin marketplace add phong190897/ai-rules',
     'claude plugin install ai-rules@ai-rules-marketplace', 'ai-rules:init-repo', 'Project thread',
     'AGENTS.md', 'maxFailedRunsWithoutChange', 'commitMsg', 'npm test',
-    'ai-rules-architecture', 'architectures.md', 'dependency-cruiser'])
+    'ai-rules-architecture', 'architectures.md', 'not decided (user choice)'])
     assert.ok(r.includes(n), n);
 });

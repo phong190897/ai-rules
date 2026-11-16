@@ -50,6 +50,10 @@ Mỗi repo có một mục `## Architecture` trong `CLAUDE.md`, và AI làm theo
 
 Mục Architecture gồm bốn phần: kiểu kiến trúc và lý do, bản đồ module, luật phụ thuộc, và code mới đặt ở đâu.
 
+Hai điều nên biết:
+- Nếu bạn chưa muốn quyết định, AI ghi `Style: not decided (user choice)` và không hỏi lại cho đến khi bạn nhắc tới.
+- Repo đã thiết lập từ trước có mục `## Structure`: sau khi đồng bộ, AI sẽ đề xuất chuyển nó thành `## Architecture`.
+
 Danh mục các kiểu kiến trúc nằm ở `.claude/ai-rules/architectures.md` (modular monolith, N-Layer, Clean / Hexagonal, vertical slice, microservices, microfrontend, event-driven, serverless). AI được đề xuất kiểu nằm ngoài danh mục và phải nói rõ điều đó.
 
 Để luật phụ thuộc có kiểm tra thật, AI đề xuất bật công cụ của chính stack, chạy cùng lint:

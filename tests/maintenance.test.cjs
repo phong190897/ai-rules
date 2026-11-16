@@ -5,7 +5,7 @@ test('this repo has its own skill to update the architecture catalog', () => {
   assert.match(s, /^---\nname: update-architectures\ndescription: Use when .+\n---\n/);
   assert.equal(s.includes('Managed by ai-rules'), false);
   for (const n of ['plugins/ai-rules/payload/managed/ai-rules/architectures.md', 'Last reviewed:', 'sources',
-    'two independent', 'sync.cjs --bump', 'sync.cjs --target .', 'npm test', 'pull request', 'tests/content.test.cjs'])
+    'two independent', 'sync.cjs --bump', 'sync.cjs --target .', 'npm test', 'pull request', 'tests/content.test.cjs', 'boundary tool', 'README.md'])
     assert.ok(s.includes(n), n);
   assert.ok(fs.readFileSync('README.md', 'utf8').includes('update-architectures'));
 });

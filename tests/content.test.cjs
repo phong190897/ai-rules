@@ -54,8 +54,12 @@ test('architecture catalog has every style in the same shape, plus the boundary 
     assert.equal(text.split(label).length - 1, names.length, label);
   assert.match(text, /^Last reviewed: \d{4}-\d{2}-\d{2}$/m);
   assert.match(text, /^## Boundary tools$/m);
-  for (const tool of ['dependency-cruiser', 'eslint-plugin-boundaries', 'import-linter', 'ArchUnit', 'NetArchTest', 'depguard'])
-    assert.ok(text.includes(tool), tool);
+  // Tool names are not pinned: the update-architectures skill may replace them. The table shape is.
+  const table = text.slice(text.indexOf('## Boundary tools'));
+  assert.match(table, /^\| Stack \| Tool \| How it runs \|$/m);
+  const rows = table.split('\n').filter((l) => /^\| (?!Stack|---)/.test(l));
+  assert.ok(rows.length >= 5, `boundary tools table has ${rows.length} rows`);
+  for (const r of rows) assert.equal(r.split('|').length, 5, r);
   assert.ok(lines(f) <= 150, `catalog has ${lines(f)} lines`);
   const skill = fs.readFileSync(`${MANAGED}/skills/ai-rules-architecture/SKILL.md`, 'utf8');
   for (const n of names) assert.equal(skill.includes(`### ${n}`), false, `${n} belongs in the catalog, not the skill`);
@@ -70,7 +74,7 @@ test('each content skill has valid frontmatter, required content and size', () =
     assert.ok(lines(f) <= (name.endsWith('-basics') ? 100 : 150), `${name} has ${lines(f)} lines`);
   }
 });
-test('catalog lists the three approved areas and cloud availability', () => {
+test('catalog lists the approved areas and cloud availability', () => {
   const c = fs.readFileSync(`${MANAGED}/ai-rules/catalog.md`, 'utf8');
   for (const n of ['frontend-design', '/security-review', 'ai-rules-security-basics', 'ai-rules-backend-basics',
     'ai-rules-architecture', 'Available in cloud sessions']) assert.ok(c.includes(n), n);
@@ -83,4 +87,17 @@ test('AGENTS.md carries the shared rules without the Claude-only section', () =>
   const a = sync.generateAgentsMd(PAYLOAD);
   assert.match(a, /- Scope: change only what was asked\./);
   assert.doesNotMatch(a, /Superpowers|Cloud sessions|Claude Code only/);
+});
+
+test('review fixes: the architecture prompt cannot nag, and the instructions cover the gaps', () => {
+  const core = fs.readFileSync(`${MANAGED}/rules/ai-rules-core.md`, 'utf8');
+  const line = core.split('\n').find((l) => l.startsWith('- No architecture yet:'));
+  for (const n of ['`Style:` line is empty', 'propose once', 'not decided (user choice)', 'never propose'])
+    assert.ok(line.includes(n), n);
+  const skill = fs.readFileSync(`${MANAGED}/skills/ai-rules-architecture/SKILL.md`, 'utf8');
+  for (const n of ['unless the user brings it up', 'test library', 'stays unchecked', 'only after the user agrees',
+    'whenever you run lint'])
+    assert.ok(skill.includes(n), n);
+  assert.equal(skill.includes('A violation then fails lint'), false);
+  assert.ok(fs.readFileSync('plugins/ai-rules/skills/init-repo/SKILL.md', 'utf8').includes('filled through `ai-rules-architecture`'));
 });

@@ -20,7 +20,8 @@ This skill belongs to the ai-rules source repository only. It keeps `plugins/ai-
    - every style keeps the same four lines (`What it is`, `Fits when`, `Does not fit when`, `Typical modules and rule`);
    - set `Last reviewed:` to today's date, even when nothing else changed;
    - keep the file at 150 lines or fewer;
-   - when a style name is added, removed or renamed, update the list of names in `tests/content.test.cjs` and the list in `README.md`.
+   - when a style name is added, removed or renamed, update the list of names in `tests/content.test.cjs` and the list in `README.md`;
+   - when a boundary tool is added, removed or renamed, keep the three columns of the table (Stack, Tool, How it runs) and update the same table in `README.md`. Tests do not pin tool names.
 6. Run:
 
    ```bash

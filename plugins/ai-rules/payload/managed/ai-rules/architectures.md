@@ -15,7 +15,7 @@ A starting point, not a limit: propose a style from outside this list when none 
 - What it is: code split by technical role, usually presentation, business logic and data access.
 - Fits when: a small or CRUD-heavy application with simple rules; the team already knows the pattern.
 - Does not fit when: business rules are rich and change often, because one feature ends up spread across every layer.
-- Typical modules and rule: `api/`, `services/`, `repositories/`; a layer calls only the layer directly below it.
+- Typical modules and rule: `api/`, `services/`, `repositories/`; a layer calls only layers below it, usually the one directly below.
 
 ### Clean / Hexagonal
 - What it is: business rules at the centre with no knowledge of frameworks, databases or transport; adapters plug in around them.
@@ -57,12 +57,12 @@ A starting point, not a limit: propose a style from outside this list when none 
 
 Tools that turn the dependency rules into a check. Run the check together with lint.
 
-| Stack | Tool |
-|---|---|
-| JavaScript / TypeScript | `dependency-cruiser`, or `eslint-plugin-boundaries` when the repo already uses ESLint |
-| Python | `import-linter` |
-| Java / Kotlin | ArchUnit |
-| .NET | NetArchTest |
-| Go | `depguard` (through `golangci-lint`) |
+| Stack | Tool | How it runs |
+|---|---|---|
+| JavaScript / TypeScript | `dependency-cruiser`, or `eslint-plugin-boundaries` when the repo already uses ESLint | command-line tool, or lint plugin |
+| Python | `import-linter` | command-line tool |
+| Java / Kotlin | ArchUnit | test library: rules run as unit tests |
+| .NET | NetArchTest | test library: rules run as unit tests |
+| Go | `depguard` (through `golangci-lint`) | lint plugin |
 
 Any other stack has no listed tool yet: rely on the rule, and say so.
