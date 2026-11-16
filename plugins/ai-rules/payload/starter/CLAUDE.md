@@ -12,6 +12,10 @@ _Not set yet. Filled in by the `ai-rules-repo-setup` skill during brainstorming.
 - Test:
 - E2E:
 
-## Structure
+## Architecture
+- Style:
+- Modules:
+- Dependency rules:
+- New code:
 
 ## Conventions

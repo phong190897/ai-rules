@@ -11,6 +11,7 @@ test('README covers install, environments and configuration', () => {
   const r = fs.readFileSync('README.md', 'utf8');
   for (const n of ['claude plugin marketplace add phong190897/ai-rules',
     'claude plugin install ai-rules@ai-rules-marketplace', 'ai-rules:init-repo', 'Project thread',
-    'AGENTS.md', 'maxFailedRunsWithoutChange', 'commitMsg', 'npm test'])
+    'AGENTS.md', 'maxFailedRunsWithoutChange', 'commitMsg', 'npm test',
+    'ai-rules-architecture', 'architectures.md', 'dependency-cruiser'])
     assert.ok(r.includes(n), n);
 });

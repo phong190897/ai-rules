@@ -11,14 +11,30 @@ test('core rules fit the budget and point at every skill', () => {
   assert.ok(lines(f) <= 40, `core has ${lines(f)} lines`);
   assert.match(text, /^# Core rules$/m); assert.match(text, /^## Claude Code only$/m);
   for (const s of ['ai-rules-handling-failures', 'ai-rules-saving-tokens', 'ai-rules-creating-prs',
-    'ai-rules-writing-comments', 'ai-rules-repo-setup']) assert.ok(text.includes(s), s);
+    'ai-rules-writing-comments', 'ai-rules-repo-setup', 'ai-rules-architecture']) assert.ok(text.includes(s), s);
+});
+test('core rules, starter and init-repo carry the architecture section', () => {
+  const core = fs.readFileSync(`${MANAGED}/rules/ai-rules-core.md`, 'utf8');
+  assert.match(core, /^- Architecture: follow the Architecture section of `CLAUDE\.md`\./m);
+  assert.match(core, /^- No architecture yet: /m);
+  assert.ok(core.indexOf('- Architecture:') < core.indexOf('## Claude Code only'));
+  const starter = fs.readFileSync(`${PAYLOAD}/starter/CLAUDE.md`, 'utf8');
+  for (const n of ['## Architecture', '- Style:', '- Modules:', '- Dependency rules:', '- New code:'])
+    assert.ok(starter.includes(n), n);
+  assert.equal(starter.includes('## Structure'), false);
+  const setup = fs.readFileSync(`${MANAGED}/skills/ai-rules-repo-setup/SKILL.md`, 'utf8');
+  assert.equal(setup.includes('40 lines'), false);
+  assert.ok(fs.readFileSync('plugins/ai-rules/skills/init-repo/SKILL.md', 'utf8').includes('Commands, Architecture, Conventions'));
+  const agents = sync.generateAgentsMd(PAYLOAD);
+  assert.match(agents, /- Architecture: follow the Architecture section/);
 });
 test('every managed .md and .cjs carries the managed marker', () => {
   for (const f of walk(MANAGED).filter((x) => /\.(md|cjs)$/.test(x)))
     assert.ok(fs.readFileSync(f, 'utf8').includes('Managed by ai-rules. Do not edit; overwritten on sync.'), f);
 });
 const SKILLS = {
-  'ai-rules-repo-setup': ['CLAUDE.md', 'catalog.md', '.claude/ai-rules.json', 'e2ePreflight'],
+  'ai-rules-repo-setup': ['CLAUDE.md', 'catalog.md', '.claude/ai-rules.json', 'e2ePreflight',
+    'ai-rules-architecture', '60 lines', 'five jobs'],
   'ai-rules-creating-prs': ['## Summary', '## Why', '## Changes', '## Testing', '72', 'refactor'],
   'ai-rules-writing-comments': ['commit', 'pull request'],
   'ai-rules-handling-failures': ['known-issues.md', 'environment', 'flaky'],

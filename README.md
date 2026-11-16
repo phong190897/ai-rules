@@ -40,6 +40,30 @@ Thiết lập tạo các file sau, và bạn commit chúng vào repo:
 
 Các file được quản lý (có dòng "Managed by ai-rules") bị ghi đè mỗi lần đồng bộ; đừng sửa tay. Bật thêm "Allow GitHub Actions to create and approve pull requests" trong cài đặt repo.
 
+## Kiến trúc của từng repo
+
+Mỗi repo có một mục `## Architecture` trong `CLAUDE.md`, và AI làm theo nó ở mọi phiên. Mục này được điền qua skill `ai-rules-architecture`, lúc brainstorm hoặc sau khi thiết lập:
+
+- **Repo mới:** AI hỏi về quy mô, cách triển khai, các mảng nghiệp vụ, rồi đưa ra hai hoặc ba kiến trúc phù hợp kèm cái giá của từng cái. AI nói mình nghiêng về cái nào; **bạn là người quyết định**, không có mặc định.
+- **Repo có kiến trúc rõ:** AI ghi lại đúng hiện trạng.
+- **Repo chưa có kiến trúc nhất định:** AI mô tả hiện trạng rồi đưa ra vài kiến trúc có thể hướng tới. Cái bạn chọn được ghi là mục tiêu; code mới theo nó, code cũ không bị tự sửa.
+
+Mục Architecture gồm bốn phần: kiểu kiến trúc và lý do, bản đồ module, luật phụ thuộc, và code mới đặt ở đâu.
+
+Danh mục các kiểu kiến trúc nằm ở `.claude/ai-rules/architectures.md` (modular monolith, N-Layer, Clean / Hexagonal, vertical slice, microservices, microfrontend, event-driven, serverless). AI được đề xuất kiểu nằm ngoài danh mục và phải nói rõ điều đó.
+
+Để luật phụ thuộc có kiểm tra thật, AI đề xuất bật công cụ của chính stack, chạy cùng lint:
+
+| Stack | Công cụ |
+|---|---|
+| JavaScript / TypeScript | `dependency-cruiser` hoặc `eslint-plugin-boundaries` |
+| Python | `import-linter` |
+| Java / Kotlin | ArchUnit |
+| .NET | NetArchTest |
+| Go | `depguard` (qua `golangci-lint`) |
+
+Stack khác chưa có công cụ trong danh mục, nên ở đó chỉ có rule.
+
 ## Rule mới đến repo con như thế nào
 
 - **Tự động:** workflow GitHub Actions trong repo con chạy mỗi ngày, mở PR `chore: sync ai-rules` khi repo gốc có thay đổi. Dùng được cho repo chỉ chạy trên cloud.
