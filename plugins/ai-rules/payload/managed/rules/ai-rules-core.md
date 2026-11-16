@@ -13,6 +13,8 @@
 - E2E: run the repo's environment preflight (if `.claude/ai-rules.json` declares one) before the first e2e run. Re-run only the failing tests; run the full suite once, at the end.
 - Tokens: search before reading; read only the part you need; never re-read a file already in context; run the narrowest test that proves the change; trim long command output; keep replies short. Details: `ai-rules-saving-tokens`.
 - PRs, commits, comments: follow `ai-rules-creating-prs` and `ai-rules-writing-comments`.
+- Architecture: follow the Architecture section of `CLAUDE.md`. Put new code in the module that owns it; ask the user before crossing a module boundary or breaking a dependency rule. Details: `ai-rules-architecture`.
+- No architecture yet: if the Architecture section of `CLAUDE.md` is missing or its `Style:` line is empty, and the task is more than a small fix, propose once to fill it with `ai-rules-architecture`. If the user declines, write `- Style: not decided (user choice)`; never propose when that line is present.
 - Managed files: never hand-edit files marked "Managed by ai-rules", `.claude/ai-rules.json` or `.claude/settings.json` without the user's approval.
 - Reply in the user's language.
 

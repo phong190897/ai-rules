@@ -1,7 +1,8 @@
 {
-  "sourceVersion": "d6d3b7d082ba",
-  "sourceSeq": 3,
+  "sourceVersion": "c4f25a9ce821",
+  "sourceSeq": 5,
   "files": [
+    ".claude/ai-rules/architectures.md",
     ".claude/ai-rules/catalog.md",
     ".claude/ai-rules/scripts/git-commit-msg.cjs",
     ".claude/ai-rules/scripts/guards/config-guard.cjs",
@@ -23,6 +24,7 @@
     ".claude/ai-rules/scripts/lib/io.cjs",
     ".claude/ai-rules/scripts/lib/state.cjs",
     ".claude/rules/ai-rules-core.md",
+    ".claude/skills/ai-rules-architecture/SKILL.md",
     ".claude/skills/ai-rules-backend-basics/SKILL.md",
     ".claude/skills/ai-rules-creating-prs/SKILL.md",
     ".claude/skills/ai-rules-handling-failures/SKILL.md",
